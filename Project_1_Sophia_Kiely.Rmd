@@ -1,0 +1,42 @@
+---
+title: "Project One"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## MT5763 Software and Data Analysis **Due: 8th October**
+
+Please find my GitHub repo here <https://github.com/selsiekiely/MT5763_1_190018562>.
+
+### **Contents**
+### Data Wrangling
+###Data Visualisation
+###Statistical Modelling
+
+##**Data Wrangling**
+## We will now data wrangle the BikeSeoul.csv
+
+```{r, include = FALSE}
+library(tidyverse)
+library(readr)
+BikeSeoul <- read_csv("~/Year 3/MT5763/BikeSeoul.csv")
+```
+
+```{r BikeSeoul}
+BikeSeoul <- BikeSeoul %>%
+  select(-`Visibility (10m)`, -`Dew point temperature(C)`, -`Solar Radiation (MJ/m2)`, 
+         -`Rainfall(mm)`, -`Snowfall (cm)`)
+View(BikeSeoul)
+```
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
