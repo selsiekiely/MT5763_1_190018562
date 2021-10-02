@@ -29,7 +29,18 @@ BikeSeoul <- read_csv("~/Year 3/MT5763/BikeSeoul.csv")
 BikeSeoul <- BikeSeoul %>%
   select(-`Visibility (10m)`, -`Dew point temperature(C)`, -`Solar Radiation (MJ/m2)`, 
          -`Rainfall(mm)`, -`Snowfall (cm)`)
+BikeSeoul <- BikeSeoul %>%  
+  filter(!is.na(`Rented Bike Count`))
 View(BikeSeoul)
+BikeSeoul <- BikeSeoul %>% 
+  select(-`Functioning Day`)
+BikeSeoul <- BikeSeoul %>%
+  rename(Count = `Rented Bike Count`) %>%
+  rename(Temperature = `Temperature(C)`) %>%
+  rename(Humidity = `Humidity (%)`) %>%
+  rename(WindSpeed = `Wind speed (m/s)`) %>%
+  rename(Season = `Seasons`)
+  
 ```
 ## Including Plots
 
