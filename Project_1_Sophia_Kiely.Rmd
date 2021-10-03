@@ -34,20 +34,36 @@ BikeSeoul <- BikeSeoul %>%
 View(BikeSeoul)
 BikeSeoul <- BikeSeoul %>% 
   select(-`Functioning Day`)
+library(lubridate)
 BikeSeoul <- BikeSeoul %>%
   rename(Count = `Rented Bike Count`) %>%
   rename(Temperature = `Temperature(C)`) %>%
-  rename(Humidity = `Humidity (%)`) %>%
+  rename(Humidity = `Humidity(%)`) %>%
   rename(WindSpeed = `Wind speed (m/s)`) %>%
-  rename(Season = `Seasons`)
-  
+  rename(Season = `Seasons`) #%>%
+  #filter(dmy(Date))
+View(BikeSeoul)  
+#mutate(BikeSeoul, FullDate = as_datetime(Date,Hour))
+#BikeSeoul <- BikeSeoul %>%
+ # rename(Holiday, c("Holiday" = "Yes")) %>%
+  #rename(Holiday, c("No Holiday" = "No"))
 ```
-## Including Plots
+```{r, include = FALSE}
+BikeWashington <- read_csv("~/Year 3/MT5763/BikeWashingtonDC.csv")
+BikeWashington <- BikeWashington %>%
+  select(-instant, -yr, -mnth, -weekday, -workingday, -weathersit, -atemp, -casual, -registered)
+BikeWashington <- BikeWashington %>%
+  rename(Date = dteday) %>%
+  rename(Count = cnt) %>%
+  rename(Hour = hr) %>%
+  rename(Temperature = temp) %>%
+  rename(Humidity = hum) %>%
+  rename(WindSpeed = windspeed) %>%
+  rename(Season = season) %>%
+  rename(Holiday = holiday)
+View(BikeWashington)
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
+
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
