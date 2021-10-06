@@ -23,7 +23,6 @@ Please find my GitHub repo here <https://github.com/selsiekiely/MT5763_1_1900185
 library(tidyverse)
 library(readr)
 BikeSeoul <- read_csv("~/Year 3/MT5763/BikeSeoul.csv")
-  View(BikeSeoul)
 BikeWashington <- read_csv("~/Year 3/MT5763/BikeWashingtonDC.csv")
 ```
 
@@ -33,7 +32,6 @@ BikeSeoul <- BikeSeoul %>%
          -`Rainfall(mm)`, -`Snowfall (cm)`)
 BikeSeoul <- BikeSeoul %>%  
   filter(!is.na(`Rented Bike Count`))
-View(BikeSeoul)
 BikeSeoul <- BikeSeoul %>% 
   select(-`Functioning Day`)
 library(lubridate)
@@ -44,15 +42,18 @@ BikeSeoul <- BikeSeoul %>%
   rename(WindSpeed = `Wind speed (m/s)`) %>%
   rename(Season = `Seasons`) #%>%
 BikeSeoul$Date <- as.Date(BikeSeoul$Date)
+year(BikeSeoul$Date) <- year(BikeSeoul$Date) + 2000
 BikeSeoul <- BikeSeoul %>%
-  mutate(BikeSeoul, FullDate = make_datetime(year = year(Date), month = month(Date), day = mday(Date), Hour))
+  mutate(BikeSeoul, FullDate = make_datetime(year = year(Date), month = month(Date), day = mday(Date), Hour)) %>%
+  mutate(Temperature = as.numeric(Temperature))
 BikeSeoul$Holiday <- ifelse(BikeSeoul$Holiday == "No Holiday", "No", "Yes")
 yes_no_levels <- c("Yes", "No")
 season_levels <- c("Spring", "Summer", "Autumn", "Winter")
-BikeSeoul <- BikeSeoul %>%
-  order(Season, method = season_levels) %>%
-  factor(Holiday, levels = yes_no_levels)# %>%
+#BikeSeoul <- BikeSeoul %>%
+#  order(Season, method = season_levels) %>%
+#  factor(Holiday, levels = yes_no_levels)# %>%
 #order(Season, method = season_levels)
+View(BikeSeoul)
 
 ```
 ```{r BikeWashington}
@@ -67,9 +68,8 @@ BikeWashington <- BikeWashington %>%
   rename(WindSpeed = windspeed) %>%
   rename(Season = season) %>%
   rename(Holiday = holiday)
-View(BikeWashington)
-BikeWashington$Humidity <- paste(100*BikeWashington$Humidity, "%", sep= " ")
-BikeWashington$Temperature <- paste(47*BikeWashington$Temperature - 8, "°C", sep = " ")
+BikeWashington$Humidity <- paste(100*BikeWashington$Humidity)#
+BikeWashington$Temperature <- paste(47*BikeWashington$Temperature - 8)
 BikeWashington$WindSpeed <- paste(67*(18/5)*BikeWashington$WindSpeed)
 season_levels <- c("Spring", "Summer", "Autumn", "Winter")
 yes_no_levels <- c("Yes", "No")
@@ -78,13 +78,21 @@ yes_no_levels <- c("Yes", "No")
   #factor(Holiday, levels = yes_no_levels)
 BikeWashington$Date <- as.Date(BikeWashington$Date)
 BikeWashington <- BikeWashington %>%
-  mutate(BikeWashington, FullDate = make_datetime(year = year(Date), month = month(Date), day = mday(Date), Hour))
+  mutate(BikeWashington, FullDate = make_datetime(year = year(Date), month = month(Date), day = mday(Date), Hour)) %>% 
+  mutate(Temperature = as.numeric(Temperature))
+View(BikeWashington)
 ```
-#**Data Visualisation**
-##How does air temperature vary over the course of a year?
+# **Data Visualisation**
+## How does air temperature vary over the course of a year?
+### Conjoin the two data sets in order to use ggplot.
 ```{r, include= FALSE}
+library(dplyr)
 library(ggplot2)
-
+BikeSeoul %>% count(year(Date), Temperature) %>% summary()
+BikeWashington %>% count(year(Date), Temperature) %>% summary()
+First_graph_data <- full_join(BikeSeoul, BikeWashington, by = c("Date", "Temperature"))
+ggplot(First_graph_data) +
+  geom_point(aes(x = year(Date), y = Temperature))
 ```
 
 
