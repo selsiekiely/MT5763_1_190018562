@@ -95,7 +95,6 @@ library(dplyr)
 library(ggplot2)
 BikeSeoul %>% count(year(Date), Temperature) %>% summary()
 BikeWashington %>% count(year(Date), Temperature) %>% summary()
-#First_graph_data <- full_join(BikeSeoul, BikeWashington, by = c("Date", "Temperature"))
 ggplot() + 
   geom_point(BikeSeoul, mapping = aes(x = month(Date), y = Temperature), color='green') + 
   geom_point(BikeWashington, mapping = aes(x = month(Date), y = Temperature), color='red') +
@@ -104,8 +103,42 @@ ggplot() +
 #ggplot(First_graph_data) +
  # geom_point(aes(x = year(Date), y = Temperature))
 ```
+## How do Seasons affect the average number of rented bikes?
+### I will find a daily average for rented bikes and compile this data to compare against Seasons in a plot.
+```{r, include= FALSE}
+Seoul_daily_count <- BikeSeoul %>%
+  group_by(Date) %>%
+  summarise(mn = mean(Count))
+Washington_daily_count <- BikeWashington %>%
+  group_by(Date) %>%
+  summarise(mn = mean(Count))
+head(Washington_daily_count)
+ggplot() +
+  geom_point(Seoul_daily_count, mapping = aes(x = month(Date), y = mn), color='blue') +
+  geom_point(Washington_daily_count, mapping = aes(x = month(Date), y = mn), color='red') +
+  xlab("Date") + ylab("Average Bike Rent") +
+    ggtitle("Average Bike Rent over Season change")
 ```
+## Do Holidays increase or decrease the demand for rented bikes?
+### Conjoin data sets and compare Yes/No holiday to month and rent count.
 
+```{r, include=FALSE}
+ggplot(BikeSeoul) +
+  geom_point(mapping = aes(x = Date, y = Count))+
+  facet_wrap(~Holiday)
+ggplot(BikeWashington) +
+  geom_point(mapping = aes(x = Date, y = Count)) +
+  facet_wrap(~Holiday)
+  
+```
+## How does the time of day affect the demand for rented bikes?
+### I will use lubridate to pick out the time of day and plot this against count.
+
+```{r, include=FALSE}
+ggplot() +
+  geom_point(BikeSeoul, mapping = aes(x= hour(FullDate), y = Count), color = 'green') +
+  geom_point(BikeWashington, mapping = aes(x = hour(FullDate), y = Count), color = 'red')
+```
 
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
