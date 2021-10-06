@@ -25,6 +25,7 @@ library(readr)
 BikeSeoul <- read_csv("~/Year 3/MT5763/BikeSeoul.csv")
 View(BikeSeoul)
 BikeWashington <- read_csv("~/Year 3/MT5763/BikeWashingtonDC.csv")
+View(BikeWashington)
 ```
 
 ```{r BikeSeoul}
@@ -43,7 +44,7 @@ BikeSeoul <- BikeSeoul %>%
   rename(WindSpeed = `Wind speed (m/s)`) %>%
   rename(Season = `Seasons`) %>%
   mutate(Date = as.Date(Date, format = "%d/%m/%Y"))
-year(BikeSeoul$Date) <- year(BikeSeoul$Date) + 2000
+year(BikeSeoul$Date) <- year(BikeSeoul$Date)
 BikeSeoul <- BikeSeoul %>%
   mutate(BikeSeoul, FullDate = make_datetime(year = year(Date), month = month(Date), day = mday(Date), Hour)) %>%
   mutate(Temperature = as.numeric(Temperature))
@@ -53,11 +54,10 @@ season_levels <- c("Spring", "Summer", "Autumn", "Winter")
 BikeSeoul <- BikeSeoul %>%
   mutate(Holiday = factor(Holiday, levels = yes_no_levels),
          Season = factor(Season, levels = season_levels)) %>%
-   arrange(Season, Holiday)# %>%
-#order(Season, method = season_levels)
+   arrange(Season, Holiday)
 View(BikeSeoul)
-
 ```
+
 ```{r BikeWashington}
 BikeWashington <- BikeWashington %>%
   select(-instant, -yr, -mnth, -weekday, -workingday, -weathersit, -atemp, -casual, -registered)
@@ -73,11 +73,14 @@ BikeWashington <- BikeWashington %>%
 BikeWashington$Humidity <- paste(100*BikeWashington$Humidity)#
 BikeWashington$Temperature <- paste(47*BikeWashington$Temperature - 8)
 BikeWashington$WindSpeed <- paste(67*(18/5)*BikeWashington$WindSpeed)
+BikeWashington$Holiday <- ifelse(BikeWashington$Holiday == 0, "No", "Yes")
+BikeWashington$Season <- ifelse(BikeWashington$Season == 1, "Winter", ifelse(BikeWashington$Season == 2, "Spring", ifelse(BikeWashington$Season == 3, "Summer", "Autumn")))
 season_levels <- c("Spring", "Summer", "Autumn", "Winter")
 yes_no_levels <- c("Yes", "No")
-#BikeWashington <- BikeWashington %>%
- # order(Season, method = season_levels) %>%
-  #factor(Holiday, levels = yes_no_levels)
+BikeWashington <- BikeWashington %>%
+  mutate(Holiday = factor(Holiday, levels = yes_no_levels),
+         Season = factor(Season, levels = season_levels)) %>%
+   arrange(Season, Holiday)
 BikeWashington$Date <- as.Date(BikeWashington$Date)
 BikeWashington <- BikeWashington %>%
   mutate(BikeWashington, FullDate = make_datetime(year = year(Date), month = month(Date), day = mday(Date), Hour)) %>% 
@@ -92,9 +95,15 @@ library(dplyr)
 library(ggplot2)
 BikeSeoul %>% count(year(Date), Temperature) %>% summary()
 BikeWashington %>% count(year(Date), Temperature) %>% summary()
-First_graph_data <- full_join(BikeSeoul, BikeWashington, by = c("Date", "Temperature"))
-ggplot(First_graph_data) +
-  geom_point(aes(x = year(Date), y = Temperature))
+#First_graph_data <- full_join(BikeSeoul, BikeWashington, by = c("Date", "Temperature"))
+ggplot() + 
+  geom_point(BikeSeoul, mapping = aes(x = month(Date), y = Temperature), color='green') + 
+  geom_point(BikeWashington, mapping = aes(x = month(Date), y = Temperature), color='red') +
+  xlab("Year Progress in Months") + ylab("Temperature (Degrees Celsius)") +
+    ggtitle("Temperature change over the course of the year")
+#ggplot(First_graph_data) +
+ # geom_point(aes(x = year(Date), y = Temperature))
+```
 ```
 
 
