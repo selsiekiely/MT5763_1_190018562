@@ -98,7 +98,6 @@ BikeSeoul <- BikeSeoul %>%
 BikeWashington <- BikeWashington %>%
   mutate(BikeWashington, Location = "Washington DC")
 BikeWashingtonAndSeoul <- full_join(BikeSeoul, BikeWashington)
-View(BikeWashingtonAndSeoul)
 ```
 ## How does air temperature vary over the course of a year?
 ### We will compute the data on separate graphs because Date is difficult to adjust with different year ranges. Using smooth will correctly adjust the daily pool of air temperatures that are recorded every hour.
@@ -120,7 +119,24 @@ ggplot(BikeWashington, aes(x = Date, y = Temperature)) +
 
 ## How do Seasons affect the average number of rented bikes?
 ### I will find a daily average for rented bikes and compile this data to compare against Seasons in a plot.
+### I will compile Washington's Data such that the two years recorded overlap for plotting purposes.
 ```{r, include= FALSE}
+ggplot(BikeSeoul, aes(x = Date, y = Count, col = Season))+
+  geom_smooth() +
+  labs(title = "Seoul Average Bike Rent over Time", x = "Date", y = "Count", col = "Seasons")
+
+BikeWashington <- BikeWashington %>%
+  mutate(BikeWashington, NewDate = make_date(year = 2018, month = month(Date), day = day(Date)))
+
+ggplot(BikeWashington, aes(x = NewDate, y = Count, col = Season)) +
+  geom_smooth() +
+  labs(title = "Washington Average Bike Rent over Time", x = "Time in days", y = "Count", col = "Seasons")
+```
+### For Seoul there is a clear distinction in trend for Season against Rented Bike Count. The counts recorded for winter steer well clear of summer's counts for example. The Seoul data provides evidence that in Winter there are less rented Bikes than there are in Summer. Spring and Autumn occupy the a similar range of recorded rented Bikes.
+### For Washington there is also a clear disinction 
+
+### We could use group_by and summarise() in piping like below;
+```{r, include=FALSE}
 Seoul_daily_count <- BikeSeoul %>%
   group_by(Date) %>%
   summarise(mn = mean(Count))
@@ -132,17 +148,9 @@ Seoul_daily_count <- Seoul_daily_count %>%
 Washington_daily_count <- Washington_daily_count %>%
   mutate(Washington_daily_count, Location = "Washington DC")
 Averaged_join <- full_join(Seoul_daily_count, Washington_daily_count)
-
-ggplot(Averaged_join, aes(x = month(Date), y =mn, col = as.factor(Location))) +
-  geom_smooth() +
-  labs(title = "Seasons affect on average Bikes rented", x = "Day", y = "Average", col = "Location")
-  
-ggplot() +
-  geom_smooth(Seoul_daily_count, mapping = aes(x = month(Date), y = mn), color='blue') +
-  geom_smooth(Washington_daily_count, mapping = aes(x = month(Date), y = mn), color='red') +
-  xlab("Date") + ylab("Average Bike Rent") +
-    ggtitle("Average Bike Rent over Season change")
 ```
+### However we would not be able to see the Season segments.
+
 ## Do Holidays increase or decrease the demand for rented bikes?
 ### Conjoin data sets and compare Yes/No holiday to month and rent count.
 
