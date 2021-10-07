@@ -89,15 +89,32 @@ View(BikeWashington)
 ```
 # **Data Visualisation**
 ## How does air temperature vary over the course of a year?
-### Conjoin the two data sets in order to use ggplot.
+### Create Date function to map date to a real number using lubridate package to allow plotting.
+
 ```{r, include= FALSE}
 library(dplyr)
 library(ggplot2)
-BikeSeoul %>% count(year(Date), Temperature) %>% summary()
-BikeWashington %>% count(year(Date), Temperature) %>% summary()
+date_map <- function(Date){
+  hr <- as.character(hour(Date))
+  mt <- as.character(month(Date))
+  dy <- as.character(day(Date))
+  if(length(dy) == 1){
+    dy <- paste("0", dy, sep = "")
+  }
+  if(length(mt) == 1){
+    mt <- paste("0", mt, sep = "")
+  }
+  if(length(hr) == 1){
+    hr <- paste("0", hr, sep = "")
+  }
+  return(as.numeric(paste(mt,dy,hr, sep = "")))
+}
+FullDate_columnseoul <- date_map(BikeSeoul$FullDate)
+#BikeSeoul %>% count(year(Date), Temperature) %>% summary()
+#BikeWashington %>% count(year(Date), Temperature) %>% summary()
 ggplot() + 
-  geom_point(BikeSeoul, mapping = aes(x = month(Date), y = Temperature), color='green') + 
-  geom_point(BikeWashington, mapping = aes(x = month(Date), y = Temperature), color='red') +
+  geom_point(BikeSeoul, mapping = aes(x = FullDate_columnseoul, y = Temperature), color='green')# + 
+  #geom_point(BikeWashington, mapping = aes(x = month(Date), y = Temperature), color='red') +
   xlab("Year Progress in Months") + ylab("Temperature (Degrees Celsius)") +
     ggtitle("Temperature change over the course of the year")
 #ggplot(First_graph_data) +
