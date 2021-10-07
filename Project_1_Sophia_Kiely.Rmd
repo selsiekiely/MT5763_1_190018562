@@ -101,50 +101,23 @@ BikeWashingtonAndSeoul <- full_join(BikeSeoul, BikeWashington)
 View(BikeWashingtonAndSeoul)
 ```
 ## How does air temperature vary over the course of a year?
-### We will compute the data on separate graphs because Date is difficult to adjust.
+### We will compute the data on separate graphs because Date is difficult to adjust with different year ranges. Using smooth will correctly adjust the daily pool of air temperatures that are recorded every hour.
+##### **Note** that it is not possible to plot ggplots adjacent without installing gridExtra or ggpubr
 
 ```{r, include= FALSE}
 library(dplyr)
 library(ggplot2)
-ggplot(BikeWashingtonAndSeoul, aes(x = Date, y = Temperature, col = as.factor(Season)))+
-  geom_point() +
-  labs(x = "Time in days", y = "Air Temperature", col = "Seasons") +
-  facet_wrap(~Location)
 
-ggplot(BikeSeoul, aes(x = Date, y = Temperature, col = as.factor(Season)))+
-  geom_point() +
-  labs(title = "Seoul Air Temperature over Time", x = "Time in days", y = "Air Temperature", col = "Seasons")
+ggplot(BikeSeoul, aes(x = Date, y = Temperature))+
+  geom_smooth() +
+  labs(title = "Seoul Air Temperature over Time", x = "Time in days", y = "Air Temperature")
 
-ggplot(BikeWashington, aes(x = Date, y = Temperature, col = as.factor(Season)))+
-  geom_point() +
-  labs(x = "Time in days", y = "Air Temperature", col = "Seasons")
-
-date_map <- function(Date){
-  hr <- as.character(hour(Date))
-  mt <- as.character(month(Date))
-  dy <- as.character(day(Date))
-  if(length(dy) == 1){
-    dy <- paste("0", dy, sep = "")
-  }
-  if(length(mt) == 1){
-    mt <- paste("0", mt, sep = "")
-  }
-  if(length(hr) == 1){
-    hr <- paste("0", hr, sep = "")
-  }
-  return(as.numeric(paste(mt,dy,hr, sep = "")))
-}
-FullDate_columnseoul <- date_map(BikeSeoul$FullDate)
-#BikeSeoul %>% count(year(Date), Temperature) %>% summary()
-#BikeWashington %>% count(year(Date), Temperature) %>% summary()
-ggplot() + 
-  geom_point(BikeSeoul, mapping = aes(x = FullDate_columnseoul, y = Temperature), color='green')# + 
-  #geom_point(BikeWashington, mapping = aes(x = month(Date), y = Temperature), color='red') +
-  xlab("Year Progress in Months") + ylab("Temperature (Degrees Celsius)") +
-    ggtitle("Temperature change over the course of the year")
-#ggplot(First_graph_data) +
- # geom_point(aes(x = year(Date), y = Temperature))
+ggplot(BikeWashington, aes(x = Date, y = Temperature)) +
+  geom_smooth() +
+  labs(title = "Washington Air Temperature over Time", x = "Time in days", y = "Air Temperature")
 ```
+#### In Seoul, over 2018 the temperature dips to roughly -4 in Late January/February and then peaks at roughly 30 in Late July/August before returning to 5 at the end of the year. In Washington, we follow a similar pattern; the temperature is lowest in January at roughly 2.5 and then peaks in July/August at roughly 23. Both peak and trough at similar points in the year; they follow a similar seasonal pattern. They differ such that Washington's temperature range is contained within Seoul's; Seoul experiences more dramatic temperature change. In terms of the data, we are given two years for Washington. It is noted that the pattern differs within Washington from year to year. Therefore, it would be good to collect more data for Seoul so we can be more confident about the comparisons we are making.
+
 ## How do Seasons affect the average number of rented bikes?
 ### I will find a daily average for rented bikes and compile this data to compare against Seasons in a plot.
 ```{r, include= FALSE}
@@ -154,11 +127,19 @@ Seoul_daily_count <- BikeSeoul %>%
 Washington_daily_count <- BikeWashington %>%
   group_by(Date) %>%
   summarise(mn = mean(Count))
-head(Washington_daily_count)
+Seoul_daily_count <- Seoul_daily_count %>%
+  mutate(Seoul_daily_count, Location = "Seoul")
+Washington_daily_count <- Washington_daily_count %>%
+  mutate(Washington_daily_count, Location = "Washington DC")
+Averaged_join <- full_join(Seoul_daily_count, Washington_daily_count)
 
+ggplot(Averaged_join, aes(x = month(Date), y =mn, col = as.factor(Location))) +
+  geom_smooth() +
+  labs(title = "Seasons affect on average Bikes rented", x = "Day", y = "Average", col = "Location")
+  
 ggplot() +
-  geom_point(Seoul_daily_count, mapping = aes(x = month(Date), y = mn), color='blue') +
-  geom_point(Washington_daily_count, mapping = aes(x = month(Date), y = mn), color='red') +
+  geom_smooth(Seoul_daily_count, mapping = aes(x = month(Date), y = mn), color='blue') +
+  geom_smooth(Washington_daily_count, mapping = aes(x = month(Date), y = mn), color='red') +
   xlab("Date") + ylab("Average Bike Rent") +
     ggtitle("Average Bike Rent over Season change")
 ```
