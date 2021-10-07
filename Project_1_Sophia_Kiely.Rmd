@@ -101,11 +101,24 @@ BikeWashingtonAndSeoul <- full_join(BikeSeoul, BikeWashington)
 View(BikeWashingtonAndSeoul)
 ```
 ## How does air temperature vary over the course of a year?
-### Create Date function to map date to a real number using lubridate package to allow plotting.
+### We will compute the data on separate graphs because Date is difficult to adjust.
 
 ```{r, include= FALSE}
 library(dplyr)
 library(ggplot2)
+ggplot(BikeWashingtonAndSeoul, aes(x = Date, y = Temperature, col = as.factor(Season)))+
+  geom_point() +
+  labs(x = "Time in days", y = "Air Temperature", col = "Seasons") +
+  facet_wrap(~Location)
+
+ggplot(BikeSeoul, aes(x = Date, y = Temperature, col = as.factor(Season)))+
+  geom_point() +
+  labs(title = "Seoul Air Temperature over Time", x = "Time in days", y = "Air Temperature", col = "Seasons")
+
+ggplot(BikeWashington, aes(x = Date, y = Temperature, col = as.factor(Season)))+
+  geom_point() +
+  labs(x = "Time in days", y = "Air Temperature", col = "Seasons")
+
 date_map <- function(Date){
   hr <- as.character(hour(Date))
   mt <- as.character(month(Date))
