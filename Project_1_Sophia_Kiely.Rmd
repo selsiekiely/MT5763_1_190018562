@@ -118,27 +118,23 @@ ggplot(BikeWashington, aes(x = Date, y = Temperature)) +
 ### In Seoul, over 2018 the temperature dips to roughly -4 in Late January/February and then peaks at roughly 30 in Late July/August before returning to 5 at the end of the year. In Washington, we follow a similar pattern; the temperature is lowest in January at roughly 2.5 and then peaks in July/August at roughly 23. Both peak and trough at similar points in the year; they follow a similar seasonal pattern. They differ such that Washington's temperature range is contained within Seoul's; Seoul experiences more dramatic temperature change. In terms of the data, we are given two years for Washington. It is noted that the pattern differs within Washington from year to year. Therefore, it would be good to collect more data for Seoul so we can be more confident about the comparisons we are making.
 
 ## **How do Seasons affect the average number of rented bikes?**
-### I will find a daily average for rented bikes and compile this data to compare against Seasons in a plot.
-### For Washington, Washington_daily_count, a new variable will be created to make plotting over the two years and still distinguishing between seasons possible.
+### We will find a daily sum of rented bikes and compile this data to compare against Seasons in a boxplot. 
+
 ```{r, include= FALSE}
-ggplot(BikeSeoul, aes(x = Date, y = Count, col = is.factor(Season)))+
-  geom_smooth() +
-  labs(title = "Seoul Average Bike Rent over Time", x = "Date", y = "Count", col = "Seasons")
-
-#BikeWashington <- BikeWashington %>%
- # mutate(BikeWashington, NewDate = make_date(year = 2018, month = month(Date), day = day(Date)))
-Washington_daily_count <- BikeWashington %>%
+BikeWashingtonAndSeoul_daily <- BikeWashingtonAndSeoul %>%
   group_by(Date) %>%
-  summarise(mn = mean(Count))
+  summarise(daily_count = sum(Count), Season = first(Season), Location = first(Location))
 
-ggplot(Washington_daily_count, aes(x = Date, y = mn, col = as.factor(Season))) +
-  geom_point() +
-  labs(title = "Washington DC Average Daily Bike Rent over Time", x = "Time in days", y = "Count", col = "Seasons")
+#Use first() for Season and Location because need to certify season and location in data set as well. Location can use first() because neither data sets overlap date wise.
+
+ggplot(BikeWashingtonAndSeoul_daily, aes(x = Season, y = daily_count, fill = Season))+
+  geom_boxplot()+
+  facet_wrap(~Location, scale = "free")+
+  labs(title = "How do Seasons affect the average number of rented bikes?", x = "Season", y = "Daily Count")
+
 ```
 
-### For Seoul there is a clear distinction in trend for Season against Rented Bike Count. The counts recorded for winter steer well clear of summer's counts for example. The Seoul data provides evidence that in Winter there are less rented Bikes than there are in Summer. Spring and Autumn occupy the a similar range of recorded rented Bikes.
-### For Washington there is also a clear disinction in trend for Season against Rented Bike Count. The Summer daily averages are generally higher than in winter. 
-### Again we have more data recorded for Washington and can see that the averages differ slightly from year to year. We would prefer to have more information so we can see this trend over multiple years. Seoul's count ranges from roughly 175 in Winter to roughly 1300 in Summer. Washington's daily average count ranges from roughly 20 to 360. Seoul has a much bigger range of values for Bikes Rented.
+### We can see that seasons do affect the average number of rented bikes. Within their daily Count proportions, both Seoul and Washington's Winter medians are considerably lower than the other seasons. In fact the range of Winter in Seoul is way below the lower quartile of the other seasons in Seoul. For both data sets we generally peak in Summer for Bike Counts and then trough in Winter. The count is much more spread in Autumn for both suggesting a varied uptake of bike rents. 
 
 ## **Do Holidays increase or decrease the demand for rented bikes?**
 ### We start by producing box plots for Holiday outcomes Yes and No facet wrapped by location to compare locations and whether not Rented Bikes were due to a holiday.
@@ -157,7 +153,7 @@ ggplot(BikeWashingtonAndSeoul, aes(y = Count, fill = Holiday)) +
 ### I will use lubridate to pick out the time of day and plot this against count.
 
 ```{r}
-ggplot(BikeWashingtonAndSeoul, aes(x = hour(FullDate), y = Count, col = Season))+
+ggplot(BikeWashingtonAndSeoul, aes(x = hour(FullDate), y = Count, col = Season)) +
   geom_smooth()+
   labs(title = "How does the Time of Day affect demand for rented bikes?", x = "Hour in Day", y = "Count", col = "Seasons")+
   facet_wrap(~Location, scale = "free")
@@ -205,7 +201,8 @@ first_lm_Washington <- lm(log(Count) ~ Season + Temperature + Humidity + WindSpe
 summary(first_lm_Seoul)
 summary(first_lm_Washington)
 ```
-### The median is closer to zero for BikeSeoul than BikeWashington.
+### **Residuals:**The median is closer to zero for BikeSeoul than BikeWashington. Both are not very symmetric.
+**Coefficients:** The Pr(>t) value for the coefficients in both data sets' linear models are generally below .05 therefore we can be confident about the fitting of the coefficients. The only exception to this is SeasonSummer in BikeSeoul which has Pr(>t) = 0.91247.
 
 ## Next we will calculate Confidence Intervals for the regression coefficients
 ```{r}
@@ -219,8 +216,10 @@ aim_frame <- data.frame(Season = "Winter",
                         Temperature = 0,
                         WindSpeed = 0.5,
                         Humidity = 20)
-predict(first_lm_Seoul, newdata = aim_frame, interval = "prediction")
-predict(first_lm_Washington, newdata = aim_frame, interval = "prediction")
+Seoul_prediction <- exp(predict(first_lm_Seoul, newdata = aim_frame, interval = "prediction"))
+Seoul_prediction
+Washington_prediction <- exp(predict(first_lm_Washington, newdata = aim_frame, interval = "prediction"))
+Washington_prediction
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
