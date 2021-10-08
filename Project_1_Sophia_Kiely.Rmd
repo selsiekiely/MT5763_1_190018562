@@ -29,18 +29,16 @@ BikeWashington <- read_csv("~/Year 3/MT5763/BikeWashingtonDC.csv")
 #### We remove columns unrequired and filter out columns where no bike count data is collected.
 
 ```{r BikeSeoul}
+#Remove required data columns
 BikeSeoul <- BikeSeoul %>%
   select(- `Visibility (10m)`, -`Dew point temperature(C)`, -`Solar Radiation (MJ/m2)`, 
-         -`Rainfall(mm)`, -`Snowfall (cm)`)
+         -`Rainfall(mm)`, -`Snowfall (cm)`, -`Functioning Day`)
+#Filter out data for which no counts were recorded
 BikeSeoul <- BikeSeoul %>%  
   filter(!is.na(`Rented Bike Count`))
-BikeSeoul <- BikeSeoul %>% 
-  select(-`Functioning Day`)
-```
 
-#### Where necessary, we change the name of some columns and change date to a date object. **Note** I have found Bike Count NA is represented by 0 and we will therefore remove Counts that are 0.
-
-```{r BikeSeoul}
+#Rename certain columns
+#use lubridate package to format the date 
 library(lubridate)
 BikeSeoul <- BikeSeoul %>%
   rename(Count = `Rented Bike Count`) %>%
@@ -49,23 +47,24 @@ BikeSeoul <- BikeSeoul %>%
   rename(WindSpeed = `Wind speed (m/s)`) %>%
   rename(Season = `Seasons`) %>%
   mutate(Date = as.Date(Date, format = "%d/%m/%Y"))
+
+#No Bike Counts are actually recorded as 0 so we remove these.
 BikeSeoul <- BikeSeoul[!(BikeSeoul$Count == 0),]
-```
 
-#### Create new variable called FullDate
-
-```{r BikeSeoul}
+#Create FullDate column using mutate and make_datetime from lubridate
+#Temperature needs to be numeric for graph plotting
 BikeSeoul <- BikeSeoul %>%
   mutate(BikeSeoul, FullDate = make_datetime(year = year(Date), month = month(Date), day = mday(Date), Hour)) %>%
   mutate(Temperature = as.numeric(Temperature))
-```
 
-#### Change the factor levels of Holiday and order, change the order of the Season factor levels. Within each Season we have "Yes" Holidays placed before "No" Holidays
-
-```{r BikeSeoul}
+#Change factor variables for Holiday
 BikeSeoul$Holiday <- ifelse(BikeSeoul$Holiday == "No Holiday", "No", "Yes")
+
+#Create objects to use for ordering/factor leveling the Holiday and Season columns
 yes_no_levels <- c("Yes", "No")
 season_levels <- c("Spring", "Summer", "Autumn", "Winter")
+
+#Order Seasons followed by holiday within each Season
 BikeSeoul <- BikeSeoul %>%
   mutate(Holiday = factor(Holiday, levels = yes_no_levels),
          Season = factor(Season, levels = season_levels)) %>%
@@ -76,8 +75,11 @@ BikeSeoul <- BikeSeoul %>%
 #### This is done in the same way as Seoul Bike Rents with some exceptions.
 
 ```{r BikeWashington}
+#Remove unwanted columns
 BikeWashington <- BikeWashington %>%
   select(-instant, -yr, -mnth, -weekday, -workingday, -weathersit, -atemp, -casual, -registered)
+
+#Rename required renaming columns
 BikeWashington <- BikeWashington %>%
   rename(Date = dteday) %>%
   rename(Count = cnt) %>%
@@ -87,29 +89,34 @@ BikeWashington <- BikeWashington %>%
   rename(WindSpeed = windspeed) %>%
   rename(Season = season) %>%
   rename(Holiday = holiday)
-```
 
-#### Change units for specified columns
-
-```{r BikeWashington}
+#Change units of Humidity
 BikeWashington$Humidity <- paste(100*BikeWashington$Humidity)
+
+#Change units of temperature according to function
 BikeWashington$Temperature <- paste(47*BikeWashington$Temperature - 8)
+
 #We convert the Windspeed to m/s by mupltiplying by 335/18
 BikeWashington$WindSpeed <- paste((335/18)*BikeWashington$WindSpeed)
 BikeWashington$Holiday <- ifelse(BikeWashington$Holiday == 0, "No", "Yes")
+
+#Change labeling of seasons within Season column
 BikeWashington$Season <- ifelse(BikeWashington$Season == 1, "Winter", ifelse(BikeWashington$Season == 2, "Spring", ifelse(BikeWashington$Season == 3, "Summer", "Autumn")))
+
+#Same levels as for BikeSeoul so data can match
 season_levels <- c("Spring", "Summer", "Autumn", "Winter")
 yes_no_levels <- c("Yes", "No")
+
+#Order the same as BikeSeoul
 BikeWashington <- BikeWashington %>%
   mutate(Holiday = factor(Holiday, levels = yes_no_levels),
          Season = factor(Season, levels = season_levels)) %>%
    arrange(Season, Holiday)
+
+#Assert class of BikeWashington$Date
 BikeWashington$Date <- as.Date(BikeWashington$Date)
-```
 
-#### We need to change the class of some variables in the following pipeline so that we can use them when plotting graphs using ggplot.
-
-```{r BikeWashington}
+#Creat FullDate column and assert classes of columns
 BikeWashington <- BikeWashington %>%
   mutate(BikeWashington, FullDate = make_datetime(year = year(Date), month = month(Date), day = mday(Date), Hour)) %>% 
   mutate(Temperature = as.numeric(Temperature)) %>%
@@ -121,7 +128,7 @@ BikeWashington <- BikeWashington %>%
 
 #### Before we start lets create a conjoined data set that contains a column of location
 
-```{r, include = FALSE}
+```{r}
 BikeSeoul <- BikeSeoul %>%
   mutate(BikeSeoul, Location = "Seoul")
 BikeWashington <- BikeWashington %>%
@@ -176,7 +183,7 @@ ggplot(BikeWashingtonAndSeoul, aes(y = Count, fill = Holiday)) +
 ```
 
 #### Across both Seoul and Washington data we see that when customers are not on Holiday there are generally more bikes rented. Using facet_wrap and free scaling we have conversely "scaled" the counts so that we can compare the bike rents in the proportions of renting popularity that each location exhibits. For both, the range of No Holiday is larger than Yes Holiday. For Seoul, the differences between the Yes and No medians are more substantial than Washington DC. There is more of an overlap for Washington DC than Seoul.
-We can observe a large number of outliers at the tops of the boxplots particularly the No's. These are most likely for Yes/Nos taken in Summer when the Counts are generally higher. We could plot for different Seasons to compensate for this change. However, given the high concentration of outlier dots in No versus the lower concentration of outlier dots in Yes, we are provided with more confidence that Holidays **decrease** the demand for rented bikes.
+#### We can observe a large number of outliers at the tops of the boxplots particularly the No's. These are most likely for Yes/Nos taken in Summer when the Counts are generally higher. We could plot for different Seasons to compensate for this change. However, given the high concentration of outlier dots in No versus the lower concentration of outlier dots in Yes, we are provided with more confidence that Holidays **decrease** the demand for rented bikes.
 
 
 ## **How does the time of day affect the demand for rented bikes?**
@@ -236,7 +243,7 @@ summary(first_lm_Washington)
 
 #### **Residuals:**The median is closer to zero for BikeSeoul than BikeWashington. Both are not very symmetric.
 **Coefficients:** The Pr(>t) value for the coefficients in both data sets' linear models are generally below .05 therefore we can be confident about the fitting of the coefficients. The only exception to this is SeasonSummer in BikeSeoul which has Pr(>t) = 0.91247. This would need to be reviewed.
-**Residual Standard Error** is  quite high considering the log of our minimum and maximum Counts
+**Residual Standard Error** is  quite high considering the log of our minimum and maximum Counts.
 **Multiple R squared** The multiple R squared is closer to 1 for Seoul(0.4941) than for Washington(0.278),(In Seoul, 49.41% of the Count variance can be explained by the predictor variables).
 **F-Statistic** Both F statistics are large and p values below .05. Therefore, this would give us strong evidence that a relationship exists between the response and predictor variables.
 
@@ -250,7 +257,7 @@ confint(first_lm_Washington, level = 0.97)
 
 #### No I do not think these confidence intervals are reliable. For the size of the coefficients they are too wide ranged and far from the observed coefficient values in the linear models.
 
-### Calculate 90% **Prediction** intervals for Air Temperature(0°C) , Light Wind (0.5 m/s), Humidity 20%
+### Calculate 90% **Prediction** intervals for Air Temperature(0°C) , Light Wind (0.5 m/s), Humidity (20%)
 
 ```{r}
 aim_frame <- data.frame(Season = "Winter",
