@@ -73,7 +73,8 @@ BikeWashington <- BikeWashington %>%
   rename(Holiday = holiday)
 BikeWashington$Humidity <- paste(100*BikeWashington$Humidity)
 BikeWashington$Temperature <- paste(47*BikeWashington$Temperature - 8)
-BikeWashington$WindSpeed <- paste(67*(18/5)*BikeWashington$WindSpeed)
+#We convert the Windspeed to m/s by mupltiplying by 335/18
+BikeWashington$WindSpeed <- paste((335/18)*BikeWashington$WindSpeed)
 BikeWashington$Holiday <- ifelse(BikeWashington$Holiday == 0, "No", "Yes")
 BikeWashington$Season <- ifelse(BikeWashington$Season == 1, "Winter", ifelse(BikeWashington$Season == 2, "Spring", ifelse(BikeWashington$Season == 3, "Summer", "Autumn")))
 season_levels <- c("Spring", "Summer", "Autumn", "Winter")
@@ -119,72 +120,81 @@ ggplot(BikeWashington, aes(x = Date, y = Temperature)) +
 
 ## How do Seasons affect the average number of rented bikes?
 ### I will find a daily average for rented bikes and compile this data to compare against Seasons in a plot.
-### I will compile Washington's Data such that the two years recorded overlap for plotting purposes.
+### For Washington, Washington_daily_count, a new variable will be created to make plotting over the two years and still distinguishing between seasons possible.
 ```{r, include= FALSE}
 ggplot(BikeSeoul, aes(x = Date, y = Count, col = Season))+
   geom_smooth() +
   labs(title = "Seoul Average Bike Rent over Time", x = "Date", y = "Count", col = "Seasons")
 
-BikeWashington <- BikeWashington %>%
-  mutate(BikeWashington, NewDate = make_date(year = 2018, month = month(Date), day = day(Date)))
-
-ggplot(BikeWashington, aes(x = NewDate, y = Count, col = Season)) +
-  geom_smooth() +
-  labs(title = "Washington Average Bike Rent over Time", x = "Time in days", y = "Count", col = "Seasons")
-```
-### For Seoul there is a clear distinction in trend for Season against Rented Bike Count. The counts recorded for winter steer well clear of summer's counts for example. The Seoul data provides evidence that in Winter there are less rented Bikes than there are in Summer. Spring and Autumn occupy the a similar range of recorded rented Bikes.
-### For Washington there is also a clear disinction 
-
-### We could use group_by and summarise() in piping like below;
-```{r, include=FALSE}
-Seoul_daily_count <- BikeSeoul %>%
-  group_by(Date) %>%
-  summarise(mn = mean(Count))
+#BikeWashington <- BikeWashington %>%
+ # mutate(BikeWashington, NewDate = make_date(year = 2018, month = month(Date), day = day(Date)))
 Washington_daily_count <- BikeWashington %>%
   group_by(Date) %>%
   summarise(mn = mean(Count))
-Seoul_daily_count <- Seoul_daily_count %>%
-  mutate(Seoul_daily_count, Location = "Seoul")
-Washington_daily_count <- Washington_daily_count %>%
-  mutate(Washington_daily_count, Location = "Washington DC")
-Averaged_join <- full_join(Seoul_daily_count, Washington_daily_count)
-```
-### However we would not be able to see the Season segments.
 
-## Do Holidays increase or decrease the demand for rented bikes?
-### Conjoin data sets and compare Yes/No holiday to month and rent count.
+ggplot(Washington_daily_count, aes(x = Date, y = mn, col = as.factor(Season))) +
+  geom_point() +
+  labs(title = "Washington DC Average Daily Bike Rent over Time", x = "Time in days", y = "Count", col = "Seasons")
+```
+### For Seoul there is a clear distinction in trend for Season against Rented Bike Count. The counts recorded for winter steer well clear of summer's counts for example. The Seoul data provides evidence that in Winter there are less rented Bikes than there are in Summer. Spring and Autumn occupy the a similar range of recorded rented Bikes.
+### For Washington there is also a clear disinction in trend for Season against Rented Bike Count. The Summer daily averages are generally higher than in winter. 
+### Again we have more data recorded for Washington and can see that the averages differ slightly from year to year. We would prefer to have more information so we can see this trend over multiple years. Seoul's count ranges from roughly 175 in Winter to roughly 1300 in Summer. Washington's daily average count ranges from roughly 20 to 360. Seoul has a much bigger range of values for Bikes Rented.
+
+## **Do Holidays increase or decrease the demand for rented bikes?**
+### We start by producing box plots for Holiday outcomes Yes and No facet wrapped by location to compare locations and whether not Rented Bikes were due to a holiday.
 
 ```{r, include=FALSE}
-ggplot(BikeSeoul) +
-  geom_point(mapping = aes(x = Date, y = Count))+
-  facet_wrap(~Holiday)
-ggplot(BikeWashington) +
-  geom_point(mapping = aes(x = Date, y = Count)) +
-  facet_wrap(~Holiday)
-  
+ggplot(BikeWashingtonAndSeoul, aes(y = Count, fill = Holiday)) +
+  geom_boxplot() +
+  facet_wrap(~Location, scale = "free")
 ```
-## How does the time of day affect the demand for rented bikes?
+### Across both Seoul and Washington data we see that when customers are not on Holiday there are generally more bikes rented. Using facet_wrap and free scaling we have conversely "scaled" the counts so that we can compare the bike rents in the proportions of renting popularity that each location exhibits. For both, the range of No Holiday is larger than Yes Holiday. For Seoul, the differences between the Yes and No medians are more substantial than Washington DC. There is more of an overlap for Washington DC than Seoul.
+### We can observe a large number of outliers at the tops of the boxplots particularly the No's. These are most likely for Yes/Nos taken in Summer when the Counts are generally higher. We could plot for different Seasons to compensate for this change. However, given the high concentration of outlier dots versus the lower concentration of outlier dots, we are provided with more confidence that Holidays **decrease** the demand for rented bikes.
+### It would be better to also explore Holiday's relationship with Season so that we can observe popular times to vacate in Seoul and Washington DC based on the Season.
+
+## **How does the time of day affect the demand for rented bikes?**
 ### I will use lubridate to pick out the time of day and plot this against count.
 
 ```{r, include=FALSE}
-ggplot() +
-  geom_point(BikeSeoul, mapping = aes(x= hour(FullDate), y = Count), color = 'green') +
-  geom_point(BikeWashington, mapping = aes(x = hour(FullDate), y = Count), color = 'red')
+ggplot(BikeWashingtonAndSeoul, aes(x = hour(FullDate), y = Count, col = Season))+
+  geom_smooth()+
+  labs(title = "How does the Time of Day affect demand for rented bikes?", x = "Hour in Day", y = "Count", col = "Seasons")+
+  facet_wrap(~Location, scale = "free")
 ```
-## Is there an association between Bike demand and the three meteorological variables?
+### We can see that the time of day does have an affect on Bikes rented and both Seoul and Washington share a similar sort of trend; the lowest number of rented bikes seems to be at roughly 4am with a mid morning peak at roughly 7am before peaking for the day at roughly 6pm. Seoul's winter Count per hour does not follow as a distinct sort of trend as the rest of its seasons. Washington's Seasons are more similar if still with a flattening of trend in the winter.
+
+## **Is there an association between Bike demand and the three meteorological variables?**
 ### Facet wrap Count vs. Three Meteorological Variables for each BikeSeoul and BikeWashington
 
-```{r, include= FALSE}
-ggplot(BikeSeoul) +
-  geom_point(mapping = aes(x = Temperature, y = Count, color = 'blue'))+
-  geom_point(mapping = aes(x = WindSpeed, y = Count, color = 'green'))+
-  geom_point(mapping = aes(x = Humidity, y = Count, color = 'red'))
-  
-ggplot(BikeWashington) +
-  geom_point(mapping = aes(x = Date, y = Count)) +
-  facet_wrap(~Holiday)
+```{r, include = FALSE}
+ggplot(BikeWashingtonAndSeoul, aes(x = Temperature, y = Count)) +
+  geom_smooth()+
+  facet_wrap(~Location, scale = "free") +
+  labs(title = "Is there an association between Bike demand and Temperature?", x = "Temperature (°C)", y = "Bike demand")
+```
+### For Seoul and Washington we see a similar relationship between Bike demand and Temperature. Despite both locations having different temperature ranges we can see a lower demand at the lowest temperatures;roughly -18 and -7 for Seoul and Washington respectively. Both peak Bike Demand at similar temperatures; Seoul at roughly 27 and Washington at roughly 30. We have more data for Washington and therefore can be more confident about the fitting of the regression line and conifdence intervals by geom_smooth. Where temperatures are extreme(lowest and highest) we see larger confidence intervals because of scarcity of these temperatures.
+
+```{r, include = FALSE}
+ggplot(BikeWashingtonAndSeoul, aes(x = WindSpeed, y = Count)) +
+  geom_smooth()+
+  facet_wrap(~Location, scale = "free") +
+  labs(title = "Is there an association between Bike demand and Wind Speed?", x = "Wind Speed (m/s)", y = "Bike demand")
+```
+### We have some evidence to suggest there is a correlation between Wind Speed and Bike demand. Seoul and Washington share a very similar shape of regression and confidence interval from geom_smooth, but with different ranges of Wind Speed(domain). Again it would be better to have the same amount of data for Seoul as Washington(over two years for both). Both locations peak bike demand at a windspeed between 2-5 m/s and then decline according to the regression line. There is more of a bike demand at this peak between 2-5 m/s than at 0 m/s. We have to question the regression line of Seoul as Wind Speed surpasses 6 m/s because it should not increase with Wind Speed as is suggested because cycling is impractical at this wind speed. 
+
+#### *Note* Wind Speed is also related to the direction of the wind and planned bike rent routes with cross/head/tail winds which would incourage/discourage Bike demand
+
+```{r, include = FALSE}
+
+ggplot(BikeWashingtonAndSeoul, aes(x = Humidity, y = Count)) +
+  geom_smooth()+
+  facet_wrap(~Location, scale = "free")+
+  labs(title = "Is there an association between Bike demand and Humidity?", x = "Humidity (%)", y = "Bike demand")
 
 ```
+
+### These graphs suggest a relationship between Bike demand and Humidity. Washington has more data and hence the confidence interval grey areas surrounding the regression lines are smaller. For both locations we see an increase of bike demand with humidity and then a decrease after reaching a peak. The peaks are at roughly 50% and 30% for Seoul and Washington DC respectively. In Seoul, demand increases steadily before peaking and then decreases more rapidly with Humidity increasing. In Washington, demand increases rapidly before peaking and then decreases more steadily as Humidity increases. Again, Seoul has a higher bike demand than Washington but with facet_wrap and non scaling we are able to see the proportions of bike demand relative to humidity and make comparisons.
+
 ## **Statistical Modelling**
 ### Firstly, we are required to fit a linear model
 
@@ -194,6 +204,8 @@ first_lm_Washington <- lm(log(Count) ~ Season + Temperature + Humidity + WindSpe
 summary(first_lm_Seoul)
 summary(first_lm_Washington)
 ```
+### 
+
 ## Next we will calculate Confidence Intervals for the regression coefficients
 ```{r, include=FALSE}
 confint(first_lm_Seoul, level = 0.97)
