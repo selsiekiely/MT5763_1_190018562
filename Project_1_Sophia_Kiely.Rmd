@@ -1,6 +1,7 @@
 ---
 title: "Project One"
 output: html_document
+
 ---
 
 ```{r setup, include=FALSE}
@@ -120,7 +121,7 @@ ggplot(BikeWashington, aes(x = Date, y = Temperature)) +
 ## **How do Seasons affect the average number of rented bikes?**
 ### We will find a daily sum of rented bikes and compile this data to compare against Seasons in a boxplot. 
 
-```{r, include= FALSE}
+```{r}
 BikeWashingtonAndSeoul_daily <- BikeWashingtonAndSeoul %>%
   group_by(Date) %>%
   summarise(daily_count = sum(Count), Season = first(Season), Location = first(Location))
@@ -134,7 +135,7 @@ ggplot(BikeWashingtonAndSeoul_daily, aes(x = Season, y = daily_count, fill = Sea
 
 ```
 
-### We can see that seasons do affect the average number of rented bikes. Within their daily Count proportions, both Seoul and Washington's Winter medians are considerably lower than the other seasons. In fact the range of Winter in Seoul is way below the lower quartile of the other seasons in Seoul. For both data sets we generally peak in Summer for Bike Counts and then trough in Winter. The count is much more spread in Autumn for both suggesting a varied uptake of bike rents. 
+### We can see that seasons do affect the average number of rented bikes. Within their daily Count proportions that we can see next to each other using facet_wrap, both Seoul and Washington's Winter medians are considerably lower than the other seasons. In fact the range of Winter in Seoul is way below the lower quartile of the other seasons in Seoul. For both data sets we generally peak in Summer for Bike Counts and then trough in Winter. The count is much more spread in Autumn for both suggesting a wider ranged uptake of bike rents in Autumn.
 
 ## **Do Holidays increase or decrease the demand for rented bikes?**
 ### We start by producing box plots for Holiday outcomes Yes and No facet wrapped by location to compare locations and whether not Rented Bikes were due to a holiday.
@@ -179,7 +180,7 @@ ggplot(BikeWashingtonAndSeoul, aes(x = WindSpeed, y = Count)) +
 ```
 ### We have some evidence to suggest there is a correlation between Wind Speed and Bike demand. Seoul and Washington share a very similar shape of regression and confidence interval from geom_smooth, but with different ranges of Wind Speed(domain). Again it would be better to have the same amount of data for Seoul as Washington(over two years for both). Both locations peak bike demand at a windspeed between 2-5 m/s and then decline according to the regression line. There is more of a bike demand at this peak between 2-5 m/s than at 0 m/s. We have to question the regression line of Seoul as Wind Speed surpasses 6 m/s because it should not increase with Wind Speed as is suggested because cycling is impractical at this wind speed. 
 
-#### *Note* Wind Speed is also related to the direction of the wind and planned bike rent routes with cross/head/tail winds which would incourage/discourage Bike demand
+#### *Note* Wind Speed is also related to the direction of the wind and planned bike rent routes may have cross/head/tail winds which would incourage/discourage Bike demand
 
 ```{r}
 
@@ -201,14 +202,21 @@ first_lm_Washington <- lm(log(Count) ~ Season + Temperature + Humidity + WindSpe
 summary(first_lm_Seoul)
 summary(first_lm_Washington)
 ```
-### **Residuals:**The median is closer to zero for BikeSeoul than BikeWashington. Both are not very symmetric.
-**Coefficients:** The Pr(>t) value for the coefficients in both data sets' linear models are generally below .05 therefore we can be confident about the fitting of the coefficients. The only exception to this is SeasonSummer in BikeSeoul which has Pr(>t) = 0.91247.
+
+#### **Residuals:**The median is closer to zero for BikeSeoul than BikeWashington. Both are not very symmetric.
+**Coefficients:** The Pr(>t) value for the coefficients in both data sets' linear models are generally below .05 therefore we can be confident about the fitting of the coefficients. The only exception to this is SeasonSummer in BikeSeoul which has Pr(>t) = 0.91247. This would need to be reviewed.
+**Residual Standard Error** is  quite high considering the log of our minimum and maximum Counts
+**Multiple R squared** The multiple R squared is closer to 1 for Seoul(0.4941) than for Washington(0.278),(In Seoul, 49.41% of the Count variance can be explained by the predictor variables).
+**F-Statistic** Both F statistics are large and p values below .05. Therefore, this would give us strong evidence that a relationship exists between the reponse and predictor variables.
+
 
 ## Next we will calculate Confidence Intervals for the regression coefficients
+
 ```{r}
 confint(first_lm_Seoul, level = 0.97)
 confint(first_lm_Washington, level = 0.97)
 ```
+
 ## Calculate 90% **Prediction** intervals for Air Temperature(0 degrees celsius), Light Wind (0.5 m/s), Humidity 20%
 
 ```{r}
@@ -221,6 +229,8 @@ Seoul_prediction
 Washington_prediction <- exp(predict(first_lm_Washington, newdata = aim_frame, interval = "prediction"))
 Washington_prediction
 ```
+
+### The prediction interval for Seoul is much larger than Washington.
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
