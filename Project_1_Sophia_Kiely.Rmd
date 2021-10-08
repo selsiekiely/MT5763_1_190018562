@@ -26,6 +26,7 @@ BikeWashington <- read_csv("~/Year 3/MT5763/BikeWashingtonDC.csv")
 ```
 
 ### Data wrangle of Seoul Bike Rents
+#### We remove columns unrequired and filter out columns where no bike count data is collected.
 
 ```{r BikeSeoul}
 BikeSeoul <- BikeSeoul %>%
@@ -35,6 +36,11 @@ BikeSeoul <- BikeSeoul %>%
   filter(!is.na(`Rented Bike Count`))
 BikeSeoul <- BikeSeoul %>% 
   select(-`Functioning Day`)
+```
+
+#### Where necessary, we change the name of some columns and change date to a date object. **Note** I have found Bike Count NA is represented by 0 and we will therefore remove Counts that are 0.
+
+```{r BikeSeoul}
 library(lubridate)
 BikeSeoul <- BikeSeoul %>%
   rename(Count = `Rented Bike Count`) %>%
@@ -44,10 +50,19 @@ BikeSeoul <- BikeSeoul %>%
   rename(Season = `Seasons`) %>%
   mutate(Date = as.Date(Date, format = "%d/%m/%Y"))
 BikeSeoul <- BikeSeoul[!(BikeSeoul$Count == 0),]
-year(BikeSeoul$Date) <- year(BikeSeoul$Date)
+```
+
+#### Create new variable called FullDate
+
+```{r BikeSeoul}
 BikeSeoul <- BikeSeoul %>%
   mutate(BikeSeoul, FullDate = make_datetime(year = year(Date), month = month(Date), day = mday(Date), Hour)) %>%
   mutate(Temperature = as.numeric(Temperature))
+```
+
+#### Change the factor levels of Holiday and order, change the order of the Season factor levels. Within each Season we have "Yes" Holidays placed before "No" Holidays
+
+```{r BikeSeoul}
 BikeSeoul$Holiday <- ifelse(BikeSeoul$Holiday == "No Holiday", "No", "Yes")
 yes_no_levels <- c("Yes", "No")
 season_levels <- c("Spring", "Summer", "Autumn", "Winter")
@@ -58,6 +73,7 @@ BikeSeoul <- BikeSeoul %>%
 ```
 
 ### Data wrangle of Washington DC Bike Rents
+#### This is done in the same way as Seoul Bike Rents with some exceptions.
 
 ```{r BikeWashington}
 BikeWashington <- BikeWashington %>%
@@ -71,6 +87,11 @@ BikeWashington <- BikeWashington %>%
   rename(WindSpeed = windspeed) %>%
   rename(Season = season) %>%
   rename(Holiday = holiday)
+```
+
+#### Change units for specified columns
+
+```{r BikeWashington}
 BikeWashington$Humidity <- paste(100*BikeWashington$Humidity)
 BikeWashington$Temperature <- paste(47*BikeWashington$Temperature - 8)
 #We convert the Windspeed to m/s by mupltiplying by 335/18
@@ -84,14 +105,22 @@ BikeWashington <- BikeWashington %>%
          Season = factor(Season, levels = season_levels)) %>%
    arrange(Season, Holiday)
 BikeWashington$Date <- as.Date(BikeWashington$Date)
+```
+
+#### We need to change the class of some variables in the following pipeline so that we can use them when plotting graphs using ggplot.
+
+```{r BikeWashington}
 BikeWashington <- BikeWashington %>%
   mutate(BikeWashington, FullDate = make_datetime(year = year(Date), month = month(Date), day = mday(Date), Hour)) %>% 
   mutate(Temperature = as.numeric(Temperature)) %>%
   mutate(Humidity = as.numeric(Humidity)) %>%
   mutate(WindSpeed = as.numeric(WindSpeed))
 ```
+
 # **Data Visualisation**
+
 #### Before we start lets create a conjoined data set that contains a column of location
+
 ```{r, include = FALSE}
 BikeSeoul <- BikeSeoul %>%
   mutate(BikeSeoul, Location = "Seoul")
@@ -147,8 +176,8 @@ ggplot(BikeWashingtonAndSeoul, aes(y = Count, fill = Holiday)) +
 ```
 
 #### Across both Seoul and Washington data we see that when customers are not on Holiday there are generally more bikes rented. Using facet_wrap and free scaling we have conversely "scaled" the counts so that we can compare the bike rents in the proportions of renting popularity that each location exhibits. For both, the range of No Holiday is larger than Yes Holiday. For Seoul, the differences between the Yes and No medians are more substantial than Washington DC. There is more of an overlap for Washington DC than Seoul.
-### We can observe a large number of outliers at the tops of the boxplots particularly the No's. These are most likely for Yes/Nos taken in Summer when the Counts are generally higher. We could plot for different Seasons to compensate for this change. However, given the high concentration of outlier dots versus the lower concentration of outlier dots, we are provided with more confidence that Holidays **decrease** the demand for rented bikes.
-### It would be better to also explore Holiday's relationship with Season so that we can observe popular times to vacate in Seoul and Washington DC based on the Season.
+We can observe a large number of outliers at the tops of the boxplots particularly the No's. These are most likely for Yes/Nos taken in Summer when the Counts are generally higher. We could plot for different Seasons to compensate for this change. However, given the high concentration of outlier dots in No versus the lower concentration of outlier dots in Yes, we are provided with more confidence that Holidays **decrease** the demand for rented bikes.
+
 
 ## **How does the time of day affect the demand for rented bikes?**
 #### We will use lubridate to pick out the time of day and plot this against count.
@@ -209,7 +238,7 @@ summary(first_lm_Washington)
 **Coefficients:** The Pr(>t) value for the coefficients in both data sets' linear models are generally below .05 therefore we can be confident about the fitting of the coefficients. The only exception to this is SeasonSummer in BikeSeoul which has Pr(>t) = 0.91247. This would need to be reviewed.
 **Residual Standard Error** is  quite high considering the log of our minimum and maximum Counts
 **Multiple R squared** The multiple R squared is closer to 1 for Seoul(0.4941) than for Washington(0.278),(In Seoul, 49.41% of the Count variance can be explained by the predictor variables).
-**F-Statistic** Both F statistics are large and p values below .05. Therefore, this would give us strong evidence that a relationship exists between the reponse and predictor variables.
+**F-Statistic** Both F statistics are large and p values below .05. Therefore, this would give us strong evidence that a relationship exists between the response and predictor variables.
 
 
 ### Next we will calculate Confidence Intervals for the regression coefficients
@@ -219,7 +248,9 @@ confint(first_lm_Seoul, level = 0.97)
 confint(first_lm_Washington, level = 0.97)
 ```
 
-### Calculate 90% **Prediction** intervals for Air Temperature(0 degrees celsius), Light Wind (0.5 m/s), Humidity 20%
+#### No I do not think these confidence intervals are reliable. For the size of the coefficients they are too wide ranged and far from the observed coefficient values in the linear models.
+
+### Calculate 90% **Prediction** intervals for Air Temperature(0°C) , Light Wind (0.5 m/s), Humidity 20%
 
 ```{r}
 aim_frame <- data.frame(Season = "Winter",
@@ -232,7 +263,7 @@ Washington_prediction <- exp(predict(first_lm_Washington, newdata = aim_frame, i
 Washington_prediction
 ```
 
-### The prediction interval for Seoul is much larger than Washington.
+### The prediction interval for Seoul is much larger than Washington. This is because we have more data for Washington and are therefore able to narrow it down further to its actual value.
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
